@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express();
+const bcrypt = require('bcrypt');
 const path = require("path");
 require("./db/conn");
 const Register = require("./models/register");
@@ -29,8 +30,8 @@ app.post("/register", async (req,res)=>{
       const registerEmployee = new Register({
         name:req.body.name,
         email:req.body.email,
-        password:req.body.password,
-        confirmpassword:req.body.password2
+        password: await bcrypt.hash(password,10),
+      
       })
       console.log(registerEmployee);
       const registered = await registerEmployee.save();
@@ -54,8 +55,9 @@ app.get("/login",(req,res)=>{
       console.log(req.body.password);
         const email = req.body.email;
         const password = req.body.password;
-        const user =  await Register.find({email:req.body.email});
-         if(user[0].password === password)
+        const user =  await Register.findOne({email:req.body.email});
+        const isMatch = await bcrypt.compare(password,user.password);
+         if(isMatch)
          res.status(200).render('index');
          else
          res.send("incorrect password");
